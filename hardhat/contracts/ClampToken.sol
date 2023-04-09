@@ -14,4 +14,18 @@ contract ClampToken is ERC20, Ownable {
         _mint(msg.sender, 1000*10**18);
     }
 
+    /**
+     * @dev send the tokens to the ClampDAO contract
+     */
+    function transferTokens(address _receiver) external onlyOwner{
+        transfer(_receiver, balanceOf(msg.sender));
+    }
+
+    /**
+     * @dev allows the owner to mint more tokens if needed
+     */
+    function mintTokens(uint amount) external onlyOwner {
+        _mint(msg.sender, amount*10**18);
+    }
+
 }
