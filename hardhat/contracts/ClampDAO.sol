@@ -50,6 +50,18 @@ contract ClampDAO is Ownable{
     ///Array of all the proposals
     Proposal[] public proposals;
 
+    /// @notice mapping of proposalID with the count of how many people marked a proposal as executed
+    /// @notice atleast 10 votes needed to mark the proposal as executed 
+    /// @notice so that rewards will be distributed to the creator
+    mapping(uint => uint) public markAsExecuted;
+
+    /// @notice mapping of proposalID with the count of how many people marked a proposal as not executed
+    /// @notice atleast 10 votes needed to mark the proposal as not executed 
+    /// @notice so that creator stake will be slashed
+    mapping(uint => uint) public markAsNotExecuted;
+
+    ///@notice mapping to check if user voted to mark proposal as executed/notExecuted
+    mapping(uint => address[]) public isUserVotedForExecution; 
     ///Array of voters that are in favor of the proposal
     /**
      * @dev uint is the proposalID
@@ -129,6 +141,7 @@ contract ClampDAO is Ownable{
         require(isMember[msg.sender], "You are not a member");
         require(_proposalId <= totalProposals, "Proposal does not exist!");
         require(!proposals[_proposalId - 1].isExecuted, "Proposal already executed");
+        require(!proposals[_proposalId - 1].isCanceled, "Proposal Canceled");
         require(proposals[_proposalId - 1].creator != msg.sender, "You can't vote for your own proposal");
         require(proposals[_proposalId - 1].votingPeriod > block.timestamp, "Voting Period ended");
         require(!proposals[_proposalId - 1].inExecution, "Already in execution");
@@ -170,12 +183,29 @@ contract ClampDAO is Ownable{
     }
 
     /**
+     * 
+     * @return the addresses of all the voters that are in favor of a particular proposal
+     */
+    function getInFavor(uint _proposalID) external view returns(address[] memory) {
+        return inFavour[_proposalID];
+    }
+
+    /**
+     * 
+     * @return the addresses of all the voters that are in against of a particular proposal
+     */
+    function getInAgainst(uint _proposalID) external view returns(address[] memory) {
+        return inAgainst[_proposalID];
+    }
+ 
+    /**
      * @notice cancels the proposal if 50% votes are in against
      * @param _proposalID is the proposalID of the proposal
      */
     function cancelProposal(uint _proposalID) external {
         require(_proposalID <= totalProposals, "Wrong proposal ID!");
         require(!proposals[_proposalID - 1].isExecuted, "Already executed");
+        require(isMember[msg.sender], "Not a member");
 
         if(proposals[_proposalID - 1].inAgainstVotes < voterCount/2) {
             revert("Not enough votes in against");
@@ -205,8 +235,78 @@ contract ClampDAO is Ownable{
         emit executionStarted(_proposalID, proposal.inFavourVotes);
     }
 
+    /**
+     * @notice marks the function as executed by the voter
+     */
+    function markAsExecutedByVoter(uint _proposalID) external {
+        require(isMember[msg.sender], "You are not a member");
+        require(_proposalID <= totalProposals, "Proposal doesn't exist");
+        require(proposals[_proposalID - 1].inExecution, "Not in execution");
+        require(!proposals[_proposalID - 1].isCanceled, "Proposal Cancelled");
+        require(proposals[_proposalID - 1].timeToExecute < block.timestamp, "Execution time remaining");
 
+        for(uint i =0; i<isUserVotedForExecution[_proposalID].length; i++) {
+            if(isUserVotedForExecution[_proposalID][i] == msg.sender) {
+                revert("Already voted");
+            }
+        }
 
+        markAsExecuted[_proposalID] += 1;
+        isUserVotedForExecution[_proposalID].push(msg.sender);
+
+        if(markAsExecuted[_proposalID] >= 10) {
+            markProposalAsExecuted(_proposalID);
+        }
+
+    }
+
+    /**
+     * @notice marks the function as not executed by the voter
+     */
+    function markAsNotExecutedByVoter(uint _proposalID) external {
+        require(isMember[msg.sender], "Not a member");
+        require(_proposalID <= totalProposals, "Proposal doesn't exist");
+        require(!proposals[_proposalID - 1].isExecuted, "Already executed");
+        require(proposals[_proposalID - 1].inExecution, "Not in execution");
+        require(!proposals[_proposalID - 1].isCanceled, "Proposal Cancelled");
+        require(proposals[_proposalID - 1].timeToExecute < block.timestamp, "Execution time remaining");
+
+        for(uint i =0; i<isUserVotedForExecution[_proposalID].length; i++) {
+            if(isUserVotedForExecution[_proposalID][i] == msg.sender) {
+                revert("Already voted");
+            }
+        }
+        markAsNotExecuted[_proposalID] += 1;
+        isUserVotedForExecution[_proposalID].push(msg.sender);
+
+        if(markAsNotExecuted[_proposalID] >= 10) {
+            markProposalAsCanceled(_proposalID);
+        }
+    }
+
+    /**
+     * @notice marks the function as executed officialy
+     * @notice returns the stake back to the creator plus reward them for participation
+     * @param _proposalID is the ID of the proposal
+     */
+    function markProposalAsExecuted(uint _proposalID) internal {
+ 
+        proposals[_proposalID - 1].isExecuted = true;
+        
+        address proposalCreator = proposals[_proposalID - 1].creator;
+
+        (bool sent, ) = payable(proposalCreator).call{value: 0.01 ether}("");
+        
+        require(sent, "Transaction failed");
+
+        governanceToken.transfer(proposalCreator, 1 * 10 ** 18);
+    }
+
+    function markProposalAsCanceled(uint _proposalID) internal {  
+
+        proposals[_proposalID - 1].isCanceled = true;
+
+    }
 
     receive() external payable{}
     fallback() external payable{}
