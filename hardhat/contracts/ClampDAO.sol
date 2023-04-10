@@ -12,6 +12,7 @@ contract ClampDAO is Ownable{
     event newVote(uint _proposalId, address voter, bool yesOrNo);
     event executionStarted(uint _proposalID, uint votesInFavour);
     event proposalCancelled(uint _proposalID, uint againstVotes);
+    event proposalDropped(uint _proposalID, address creator);
 
     /**
      * @dev governanceToken is the instance of the ClampToken
@@ -105,12 +106,10 @@ contract ClampDAO is Ownable{
      */
     function becomeMember() external {
         require(!isMember[msg.sender], "You are already a member");
-        require(getBalance(address(this)) > 1*10**18, "Not sufficient balance");
 
         isMember[msg.sender] = true;
         voterCount++;
         members.push(msg.sender);
-        governanceToken.transfer(msg.sender, 1*10**18);
 
     }
 
@@ -124,6 +123,7 @@ contract ClampDAO is Ownable{
      */
     function createProposal(string calldata _title, string calldata _description, uint _timeNeeded) external payable{
         require(isMember[msg.sender], "You are not a member");
+        require(governanceToken.balanceOf(msg.sender) >= 1 * 10 ** 18, "Not enough CMP tokens");
         require(msg.value >= 0.01 ether, "Not enough amount sent");
 
         totalProposals++;
@@ -142,6 +142,7 @@ contract ClampDAO is Ownable{
      */
     function vote(uint _proposalId, bool yesOrNo) external {
         require(isMember[msg.sender], "You are not a member");
+        require(governanceToken.balanceOf(msg.sender) >= 1 * 10 ** 18, "Not enough CMP tokens");
         require(_proposalId <= totalProposals, "Proposal does not exist!");
         require(!proposals[_proposalId - 1].isExecuted, "Proposal already executed");
         require(!proposals[_proposalId - 1].isCanceled, "Proposal Canceled");
@@ -161,9 +162,15 @@ contract ClampDAO is Ownable{
             proposal.inFavourVotes += 1;
             inFavour[_proposalId].push(msg.sender);
 
+            startExecution(_proposalId);
+
         }else {
             proposal.inAgainstVotes += 1;
             inAgainst[_proposalId].push(msg.sender);
+
+            if(proposal.inAgainstVotes >= voterCount/2) {
+                cancelProposal(_proposalId);
+            }
         }
 
         votedProposals[msg.sender].push(_proposalId);
@@ -205,10 +212,7 @@ contract ClampDAO is Ownable{
      * @notice cancels the proposal if 50% votes are in against
      * @param _proposalID is the proposalID of the proposal
      */
-    function cancelProposal(uint _proposalID) external {
-        require(_proposalID <= totalProposals, "Wrong proposal ID!");
-        require(!proposals[_proposalID - 1].isExecuted, "Already executed");
-        require(isMember[msg.sender], "Not a member");
+    function cancelProposal(uint _proposalID) internal {
 
         if(proposals[_proposalID - 1].inAgainstVotes < voterCount/2) {
             revert("Not enough votes in against");
@@ -222,15 +226,8 @@ contract ClampDAO is Ownable{
     /**
      * @notice marks the proposal as in execution so voting will not be allowed afterwards
      */
-    function startExecution(uint _proposalID) external {
-        require(_proposalID <= totalProposals, "Proposal doesn't exist");
-        
+    function startExecution(uint _proposalID) internal {    
         Proposal memory proposal = proposals[_proposalID - 1];
-
-        require(!proposal.isExecuted, "Already executed");
-        require(!proposal.isCanceled, "Proposal Canceled");
-        require(proposal.votingPeriod < block.timestamp, "Voting period hasn't ended yet");
-        require(proposal.inFavourVotes >= voterCount/2, "Not enough votes");
 
         proposals[_proposalID - 1].inExecution = true;
         proposals[_proposalID - 1].timeToExecute = block.timestamp + proposals[_proposalID - 1].timeToExecute;
@@ -243,6 +240,7 @@ contract ClampDAO is Ownable{
      */
     function markAsExecutedByVoter(uint _proposalID) external {
         require(isMember[msg.sender], "You are not a member");
+        require(governanceToken.balanceOf(msg.sender) >= 1 * 10 ** 18, "Not enough CMP tokens");
         require(_proposalID <= totalProposals, "Proposal doesn't exist");
         require(proposals[_proposalID - 1].inExecution, "Not in execution");
         require(!proposals[_proposalID - 1].isCanceled, "Proposal Cancelled");
@@ -268,6 +266,7 @@ contract ClampDAO is Ownable{
      */
     function markAsNotExecutedByVoter(uint _proposalID) external {
         require(isMember[msg.sender], "Not a member");
+        require(governanceToken.balanceOf(msg.sender) >= 1 * 10 ** 18, "Not enough CMP tokens");
         require(_proposalID <= totalProposals, "Proposal doesn't exist");
         require(!proposals[_proposalID - 1].isExecuted, "Already executed");
         require(proposals[_proposalID - 1].inExecution, "Not in execution");
@@ -316,6 +315,7 @@ contract ClampDAO is Ownable{
      */
     function shareRewards() external {
         require(isMember[msg.sender], "You are not a member");
+        require(governanceToken.balanceOf(msg.sender) >= 1 * 10 ** 18, "Not enough CMP tokens");
 
         uint voteCount = votedProposals[msg.sender].length;
         uint claimCount = claimedRewards[msg.sender];
@@ -337,6 +337,17 @@ contract ClampDAO is Ownable{
         }
     }
 
+    function dropProposal(uint _proposalID) external {
+        require(_proposalID <= totalProposals, "Wrong proposal ID");
+        require(msg.sender == proposals[_proposalID - 1].creator, "You are not the creator");
+        require(!proposals[_proposalID - 1].isExecuted, "Already executed");
+        require(!proposals[_proposalID - 1].isCanceled, "Already canceled");
+
+        proposals[_proposalID - 1].isCanceled = true;
+
+        emit proposalDropped(_proposalID, msg.sender);
+    }
+
     function getProposalByProposalID(uint _proposalID) external view returns(Proposal memory){
         require(_proposalID <= totalProposals, "Proposal doesn't exist");
 
@@ -346,5 +357,3 @@ contract ClampDAO is Ownable{
     receive() external payable{}
     fallback() external payable{}
 }
-
-//change all the values from isMember to balanceOf()

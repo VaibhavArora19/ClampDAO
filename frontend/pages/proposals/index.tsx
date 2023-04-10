@@ -1,4 +1,7 @@
 import SingleProposal from "@/components/Proposals/SingleProposal";
+import { useEffect, useState } from "react";
+import { useSigner, useAccount, useContract } from "wagmi";
+import { clampDAO, clampDAOABI } from "@/constants";
 
 const DUMMY_PROPOSALS = [
   {
@@ -25,6 +28,29 @@ const DUMMY_PROPOSALS = [
 ];
 
 const Proposals = () => {
+  const { address } = useAccount();
+  const {data: signer} = useSigner();
+  const [proposals, setProposals] = useState();
+
+  const contract = useContract({
+    address: clampDAO,
+    abi: clampDAOABI,
+    signerOrProvider: signer,
+  })
+
+  const getProposals = async () => {
+    const allProposals = await contract?.getAllProposals();
+    setProposals(allProposals)
+  }
+
+  useEffect(() => {
+    
+    if(address && contract) {
+      getProposals();
+    }
+  
+  }, [address && contract]);
+
   return (
     <div className="mt-24">
       {/* <div className="w-9/12 text-2xl h-40 m-auto">

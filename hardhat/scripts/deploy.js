@@ -24,3 +24,4 @@ const main = async () => {
 main();
 
 // Clamp Token -> 0x160aBDf4b5C93969E6211B3DF8682dB7223a7d72
+// Clamp DAO -> 0x17B7288c2E2E90c6658df0ca1f84fCAD11807b77
