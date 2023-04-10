@@ -60,6 +60,9 @@ contract ClampDAO is Ownable{
     /// @notice so that creator stake will be slashed
     mapping(uint => uint) public markAsNotExecuted;
 
+    /// @notice mapping of user address with the number of times they claimed rewards
+    mapping(address => uint) public claimedRewards;
+
     ///@notice mapping to check if user voted to mark proposal as executed/notExecuted
     mapping(uint => address[]) public isUserVotedForExecution; 
     ///Array of voters that are in favor of the proposal
@@ -306,6 +309,32 @@ contract ClampDAO is Ownable{
 
         proposals[_proposalID - 1].isCanceled = true;
 
+    }
+
+    /**
+     * @notice share rewards with DAO member for active contribution in the DAO
+     */
+    function shareRewards() external {
+        require(isMember[msg.sender], "You are not a member");
+
+        uint voteCount = votedProposals[msg.sender].length;
+        uint claimCount = claimedRewards[msg.sender];
+
+        if(voteCount >= 5 && voteCount < 10 && claimCount < 1){
+
+            claimedRewards[msg.sender] += 1; 
+            governanceToken.transfer(msg.sender, 1 * 10 ** 18);    
+        
+        } else if (voteCount >= 10 && voteCount < 15 && claimCount < 2) {
+
+            claimedRewards[msg.sender] += 1; 
+            governanceToken.transfer(msg.sender, 2 * 10 ** 18);   
+
+        } else if (voteCount >= 15 && voteCount < 20 && claimCount < 3) {
+            
+            claimedRewards[msg.sender] += 1; 
+            governanceToken.transfer(msg.sender, 3 * 10 ** 18);   
+        }
     }
 
     receive() external payable{}
