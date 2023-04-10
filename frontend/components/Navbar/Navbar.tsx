@@ -6,10 +6,10 @@ const Navbar = () => {
             </div>
             <div className="flex gap-10 pt-4 text-xl">
                 <div>
-                    <h2>Proposals</h2>
+                    <h2 className="cursor-pointer">Proposals</h2>
                 </div>
                 <div>
-                    <h2>Profile</h2>
+                    <h2 className="cursor-pointer">Profile</h2>
                 </div>
             </div>
                 <button className="bg-white text-black h-12 font-semibold w-44 rounded-3xl">Become member</button>

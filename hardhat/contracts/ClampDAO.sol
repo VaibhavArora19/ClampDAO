@@ -337,6 +337,14 @@ contract ClampDAO is Ownable{
         }
     }
 
+    function getProposalByProposalID(uint _proposalID) external view returns(Proposal memory){
+        require(_proposalID <= totalProposals, "Proposal doesn't exist");
+
+        return proposals[_proposalID - 1];
+    }
+
     receive() external payable{}
     fallback() external payable{}
 }
+
+//change all the values from isMember to balanceOf()
