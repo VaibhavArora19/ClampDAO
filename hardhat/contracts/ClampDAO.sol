@@ -102,10 +102,11 @@ contract ClampDAO is Ownable{
     }
 
     /**
-     * @dev becomeMember sends the user ClampToken to the member to make sure that they are a member of the ClampDAO
+     * @dev becomeMember sends the makes the user the member of Clamp DAO
      */
     function becomeMember() external {
         require(!isMember[msg.sender], "You are already a member");
+        require(governanceToken.balanceOf(msg.sender) > 1 * 10 ** 18, "Not enough balance");
 
         isMember[msg.sender] = true;
         voterCount++;
@@ -128,7 +129,7 @@ contract ClampDAO is Ownable{
 
         totalProposals++;
 
-        Proposal memory newProposal = Proposal({proposalID: totalProposals, creator: msg.sender, title: _title, description: _description, timeToExecute: _timeNeeded, inExecution: false, isExecuted: false, isCanceled: false, inFavourVotes: 0, inAgainstVotes: 0, votingPeriod: block.timestamp + 30 minutes});
+        Proposal memory newProposal = Proposal({proposalID: totalProposals, creator: msg.sender, title: _title, description: _description, timeToExecute: _timeNeeded, inExecution: false, isExecuted: false, isCanceled: false, inFavourVotes: 0, inAgainstVotes: 0, votingPeriod: block.timestamp + 5 days});
 
         proposals.push(newProposal);
 
