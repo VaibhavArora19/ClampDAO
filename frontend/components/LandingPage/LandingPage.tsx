@@ -2,6 +2,8 @@ import { useRouter } from "next/router";
 import { useSigner, useAccount, useContract } from "wagmi";
 import { useEffect, useState } from "react";
 import { clampDAO, clampDAOABI } from '@/constants';
+import { ethers } from "ethers";
+import { sign } from "crypto";
 
 const LandingPage = () => {
   const router = useRouter();
@@ -16,18 +18,19 @@ const LandingPage = () => {
 })
 
 
+const checkMember = async () => {
+  const member = await contract?.isMember(address);
+  setIsMember(member);
+}
+
+
 useEffect(() => {
 
-    if(contract) {
+      if(contract && signer) {
         checkMember();
-    }
+      }
 
-}, [address]);
-
-const checkMember = async () => {
-    const member = await contract?.isMember(address);
-    setIsMember(member);
-}
+}, [contract, signer]);
 
 const memberHandler = async () => {
     if(isMember) return;
@@ -47,7 +50,7 @@ const memberHandler = async () => {
         </h2>
       </div>
       <button className="mt-12 font-semibold bg-white text-black w-72 h-16 rounded-full text-xl" onClick={memberHandler}>
-        {!isMember ? "Become member" : "Mumber"}
+        {!isMember ? "Become member" : "Member"}
       </button>
     </div>
   );

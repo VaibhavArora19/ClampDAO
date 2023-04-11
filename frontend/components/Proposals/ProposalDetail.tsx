@@ -34,7 +34,10 @@ const ProposalDetail = (props: {proposalId: string | string[] | undefined}) => {
         }else if(details.isCancelled && !details.isExecuted && !details.inExecution) {
             setStatus('cancelled');
         }
-        setReplies(response.replies)
+        console.log(response)
+        if(response !== null) {
+            setReplies(response?.replies)
+        }
         setProposalDetails(details);
     }
 
@@ -78,7 +81,10 @@ const ProposalDetail = (props: {proposalId: string | string[] | undefined}) => {
 
         const response = await data.json();
         console.log('response is', response);
-        setReplies(response.replies);
+
+        if(response !== null) {
+            setReplies(response.replies);
+        }
 
     }   
 
@@ -101,7 +107,7 @@ const ProposalDetail = (props: {proposalId: string | string[] | undefined}) => {
                 <div className="flex gap-4">
                         <h2 className="text-lg mb-2 font-medium">Votes in favour: {proposalDetails.inFavourVotes.toString()}</h2>
                         <h2 className="text-lg mb-2 font-medium">Votes in against: {proposalDetails.inAgainstVotes.toString()}</h2>
-                        <h2 className="text-lg mb-2 font-medium">Replies: {replies.length}</h2>
+                        <h2 className="text-lg mb-2 font-medium">Replies: {replies.length > 0 ? replies.length: 0}</h2>
                 </div>
                 <h2 className="text-lg mb-4 mt-4 font-medium">Current status: <span className="font-light">{status && status}</span></h2>
             </div>
