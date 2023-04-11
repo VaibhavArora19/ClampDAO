@@ -30,7 +30,8 @@ const DUMMY_PROPOSALS = [
 const Proposals = () => {
   const { address } = useAccount();
   const {data: signer} = useSigner();
-  const [proposals, setProposals] = useState();
+  const [proposals, setProposals] = useState<Array<any>>([]);
+  const [proposalType, setProposalType] = useState<string>('active');
 
   const contract = useContract({
     address: clampDAO,
@@ -40,7 +41,23 @@ const Proposals = () => {
 
   const getProposals = async () => {
     const allProposals = await contract?.getAllProposals();
-    setProposals(allProposals)
+    console.log('proposals', allProposals)
+    
+    if(proposalType === 'active') {
+      const activeProposals = allProposals.filter((proposal: any) => {
+        return !proposal.isExecuted && !proposal.isCancelled;
+      })
+
+      setProposals(activeProposals)
+    }else if(proposalType === 'executed') {
+      const executedProposals = allProposals.filter((proposal: any) => {
+        return proposal.isExecuted;
+      })
+
+      setProposals(executedProposals)
+    }else if(proposalType === 'all') {
+      setProposals(allProposals);
+    }
   }
 
   useEffect(() => {
@@ -49,7 +66,7 @@ const Proposals = () => {
       getProposals();
     }
   
-  }, [address && contract]);
+  }, [address, contract, proposalType]);
 
   return (
     <div className="mt-24">
@@ -59,32 +76,32 @@ const Proposals = () => {
                 </h3>
             </div> */}
       <div className="flex gap-4 text-lg ml-48 w-6/12">
-        <div className="cursor-pointer">
+        <div className={`cursor-pointer ${proposalType === 'active' ? 'text-white' : 'text-gray-400'}`} onClick={() => {setProposalType('active')}}>
           <h1>Active Proposals</h1>
         </div>
-        <div className="cursor-pointer">
-          <h1>All proposals</h1>
+        <div className={`cursor-pointer ${proposalType === 'executed' ? 'text-white' : 'text-gray-400'}`} onClick={() => {setProposalType('executed')}}>
+          <h1>Executed proposals</h1>
         </div>
-        <div className="cursor-pointer">
-          <h1>Your proposals</h1>
+        <div className={`cursor-pointer ${proposalType === 'all' ? 'text-white' : 'text-gray-400'}`} onClick={() => {setProposalType('all')}}>
+          <h1>All proposals</h1>
         </div>
       </div>
       <div className="flex gap-4 rounded-lg ml-48 mt-10 text-lg pl-8 pt-2 bg-gray-800 h-10 w-10/12">
         <h3 className="w-8/12">Topic</h3>
         <h3 className="w-20">Votes</h3>
         <h3 className="w-24">Replies</h3>
-        <h3>Time Remaining</h3>
+        <h3>Time Needed</h3>
       </div>
       <div className="ml-48 mt-8">
-        {DUMMY_PROPOSALS.map((proposal) => {
+        {proposals.length > 0 && proposals.map((proposal) => {
           return (
             <SingleProposal
-              key={proposal.id}
-              id={proposal.id}
+              key={proposal.proposalID}
+              id={proposal.proposalID}
               title={proposal.title}
-              votes={proposal.votes}
-              replies={proposal.replies}
-              timeRemaining={proposal.timeRemaining}
+              votes={proposal.inFavourVotes + proposal.inAgainstVotes}
+              replies={7}
+              timeRemaining={proposal.timeToExecute.toString()}
             />
           );
         })}
