@@ -99,7 +99,7 @@ const Proposals = () => {
               key={proposal.proposalID}
               id={proposal.proposalID}
               title={proposal.title}
-              votes={proposal.inFavourVotes + proposal.inAgainstVotes}
+              votes={Number(proposal.inFavourVotes) + Number(proposal.inAgainstVotes)}
               replies={7}
               timeRemaining={proposal.timeToExecute.toString()}
             />

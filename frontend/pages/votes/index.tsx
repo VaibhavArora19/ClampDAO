@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import { useContract, useSigner, useAccount } from "wagmi";
 import { clampDAO, clampDAOABI } from "@/constants";
 import { useRouter } from "next/router";
-
+import Image from "next/image";
 
 const Votes = () => {
     const router = useRouter();
@@ -46,9 +46,16 @@ const Votes = () => {
                 <h1 className={`${userType === 'favour' ? "text-white" : "text-gray-400"} cursor-pointer`} onClick={() => {setUserType("favour")}}>In Favour</h1>
                 <h1 className={`${userType === 'against' ? "text-white" : "text-gray-400"} cursor-pointer`} onClick={() => {setUserType("against")}}>In Against</h1>
             </div>
-            <div>
+            <div className="mt-10 ml-36">
                 {
-
+                    users.map(user => {
+                        return (
+                            <div className="flex gap-4" key={user}>
+                                <Image src="/voter.avif" width={42} height={42} alt="Profile image"/>
+                                <h1 className="text-xl font-semibold relative top-4">{user}</h1>
+                            </div>
+                        )
+                    })
                 }
             </div>
         </div>
