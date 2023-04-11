@@ -162,8 +162,10 @@ contract ClampDAO is Ownable{
         if(yesOrNo == true){
             proposal.inFavourVotes += 1;
             inFavour[_proposalId].push(msg.sender);
-
-            startExecution(_proposalId);
+            
+            if(proposal.inFavourVotes >= voterCount/2) {
+                startExecution(_proposalId);
+            }
 
         }else {
             proposal.inAgainstVotes += 1;
@@ -288,7 +290,7 @@ contract ClampDAO is Ownable{
     }
 
     /**
-     * @notice marks the function as executed officialy
+     * @notice marks the function as executed officialy by the alogrithm based on votes
      * @notice returns the stake back to the creator plus reward them for participation
      * @param _proposalID is the ID of the proposal
      */

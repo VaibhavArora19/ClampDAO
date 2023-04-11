@@ -1,5 +1,5 @@
 export const clampToken = "0x160aBDf4b5C93969E6211B3DF8682dB7223a7d72";
-export const clampDAO = "0x607936C03D87EbECe54E7EEA82E447C556202984"
+export const clampDAO = "0x3F9E74ec09D08BC56bF75B75275b9b90Cac23BB5"
 
 export const clampDAOABI = [
   {
