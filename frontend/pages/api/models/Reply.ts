@@ -8,4 +8,4 @@ const replySchema = new mongoose.Schema({
     }]
 })
 
-module.exports =  mongoose.models.Reply || mongoose.model("Reply", replySchema);
+export default mongoose.models.Reply || mongoose.model("Reply", replySchema);
